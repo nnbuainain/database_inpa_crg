@@ -7,7 +7,7 @@ INPA's genetic resources collection holds over 75,000 genetic samples of birds :
 
 The database is currently managed in three excel files, separately, by each of three large animal groups. Considering the importance of the material, it is time for the creation of a proper, safe, easy to manage and public-accessible database.
 
-##Goals
+## Goals
 
 * Process the spreadsheets's data, reviewing data entries, correcting errors, etc...
 
@@ -21,9 +21,11 @@ The database is currently managed in three excel files, separately, by each of t
 
 * Brmodelo to create the conceptual and logical models.
 
-* PostgreSQL to create the physical model
+* PostgreSQL to create the physical model.
 
 * Python to process the database and program the migration of the data from the spreadsheets to the new database.
+
+* Psycopg adapter to connect to PostgreSQL database in the Python program. 
 
 ## Current stage
 
