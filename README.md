@@ -26,6 +26,9 @@ The database is currently managed in three excel files, separately, by each of t
 * Python to process the database and program the migration of the data from the spreadsheets to the new database.
 
 * Psycopg adapter to connect to PostgreSQL database in the Python program. 
+```sh
+pip install psycopg2
+```
 
 ## Current stage
 
