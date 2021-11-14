@@ -1,7 +1,8 @@
 from configparser import ConfigParser
-import sys, time, os
+import sys, time, os, constant
+import pandas as pd
 
-def delete_last_line(num_rows, wait: int):
+def delete_last_line(num_rows, wait: int) -> None:
     cursor_up = '\x1b[1A'
     delete_line = '\x1b[2K'
 
@@ -11,13 +12,13 @@ def delete_last_line(num_rows, wait: int):
         sys.stdout.write(cursor_up)
         sys.stdout.write(delete_line)
 
-def cleanup():
+def cleanup() -> None:
     if os.name == 'nt':
         os.system('cls')
     else:
         os.system('clear')
 
-def config(filename='database.ini', section='postgresql'):
+def config(filename='database.ini', section='postgresql') -> None:
     # create a parser
     parser = ConfigParser()
     # read config file
@@ -33,3 +34,8 @@ def config(filename='database.ini', section='postgresql'):
         raise Exception('Section {0} not found in the {1} file'.format(section, filename))
 
     return db
+
+def read_file():
+    df = pd.read_excel(constant.FILE_PATH)
+    df.index = df.index + 1
+    return df

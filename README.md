@@ -29,6 +29,12 @@ The database is currently managed in three excel files, separately, by each of t
 ```sh
 pip install psycopg2
 ```
+```sh
+pip install pandas
+```
+```sh
+pip install openpyxl xlsxwriter xlrd
+```
 
 ## Current stage
 

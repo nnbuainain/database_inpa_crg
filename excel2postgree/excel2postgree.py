@@ -1,32 +1,58 @@
-import psycopg2
-from utils.utils import config, delete_last_line, cleanup
+from utils.utils import delete_last_line, cleanup, read_file
+from db import create_connection, select_register, delete_register, insert_register
+import time
 
-def create_connection():
-    conn = None
+def filter_data_order(data):
+    #UNDER CONSTRUCTION...
+    data_order = data
+    return data_order
 
-    try:
-        # read connection parameters
-        params = config()
+def migrate_order() -> None:
+    print('\n*********** Migrate Order ***********\n')
+    print('Reading spreadsheet file...')
+    data = read_file()
+    time.sleep(1)
+    print('Filtering data ...')
+    data_order = filter_data_order(data)
+    time.sleep(1)
+    print(f'Result filter -> {len(data_order)} rows found')
 
-        print('Connecting to the PostgreSQL database...')
-        conn = psycopg2.connect(**params)
+    if data_order.empty:
+        input('\nIt is not possible to continue migration. Type something to return to menu... ')
+    elif input('\nType C to continue migration. Otherwise, type something to return to menu... ').lower() == 'c':
+        delete_last_line(num_rows=1, wait=1)
+        keep = True
 
-        cur = conn.cursor()
-        print('PostgreSQL database version:')
-        cur.execute('SELECT version()')
-        db_version = cur.fetchone()
-        print(db_version)
-        cur.close()
+        if select_register(conn, 'select * from ordem') > 0:
+            print('Deleting data already inserted...')
+            time.sleep(1)
 
-    except (Exception, psycopg2.DatabaseError) as error:
-        print(error)
+            if delete_register(conn, 'delete from ordem') < 1:
+                input('\nType something to return to menu... ')
+                keep = False
+
+        if keep:
+            # Converting dataframe to list
+            data_order.reset_index(level=0, inplace=True)
+            data_list = list(map(tuple, data_order.values.tolist()))
+
+            # Inserting data into postgreeSQL
+            print('Inserting data into PostgreeSQL...')
+            records_list_template = ','.join(['%s'] * len(data_list))
+            insert_query = ' insert into ordem (id_ordem, nome_ordem)  values {}'.format(records_list_template)
+            result = insert_register(conn, insert_query, data_list)
+            time.sleep(1)
+
+            if result > 0: print(f'<{result}> rows inserted with success!')
+
+            input('\nType something to return to menu... ')
 
 def menu() -> bool:
-    print('### MIGRATE EXCEL TO POSTGREE ###\n')
+    print('\n### MIGRATE EXCEL TO POSTGREE ###\n')
     print(f'Choose one option bellow:')
     print('---------------------------\n'
           '0 - Exit\n'
-          '1 - Connect database\n'
+          '1 - Migrate table ORDER\n'
           '--------------------------')
 
     while True:
@@ -46,15 +72,18 @@ def menu() -> bool:
     if option == 0:
         return False
 
-    #Create connection ----------------------------------------------------------------------
+    # Order ---------------------------------------------------------------------------------
     elif option == 1:
         cleanup()
-        conn = create_connection()
-        input('\nType something to return to menu... ')
+        migrate_order()
+
     return True
 
 def main():
+    cleanup()
     keep = True
+    global conn
+    conn = create_connection()
 
     while keep:
         cleanup()
