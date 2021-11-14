@@ -1,11 +1,7 @@
 from utils.utils import delete_last_line, cleanup, read_file
-from db import create_connection, select_register, delete_register, insert_register
+from utils.db import create_connection, select_register, delete_register, insert_register
+from models.data_filter import filter_data_order
 import time
-
-def filter_data_order(data):
-    #UNDER CONSTRUCTION...
-    data_order = data
-    return data_order
 
 def migrate_order() -> None:
     print('\n*********** Migrate Order ***********\n')
