@@ -53,6 +53,9 @@ def insert_register(conn, insert_query: str, data: list) -> int:
     cur = conn.cursor()
 
     try:
+        records_list_template = ','.join(['%s'] * len(data))
+        insert_query = insert_query + ' {}'.format(records_list_template)
+
         cur.execute(insert_query, data)
         return cur.rowcount
 

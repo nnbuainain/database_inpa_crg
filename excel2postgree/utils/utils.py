@@ -37,5 +37,4 @@ def config(filename='database.ini', section='postgresql') -> None:
 
 def read_file():
     df = pd.read_excel(constant.FILE_PATH)
-    df.index = df.index + 1
     return df

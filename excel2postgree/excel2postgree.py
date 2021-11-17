@@ -1,6 +1,6 @@
 from utils.utils import delete_last_line, cleanup, read_file
 from utils.db import create_connection, select_register, delete_register, insert_register
-from models.data_filter import filter_data_order
+from models.data_filter import filter_data_order, filter_data_family
 import time
 
 def migrate_order() -> None:
@@ -8,12 +8,13 @@ def migrate_order() -> None:
     print('Reading spreadsheet file...')
     data = read_file()
     time.sleep(1)
-    print('Filtering data ...')
-    data_order = filter_data_order(data)
-    time.sleep(1)
-    print(f'Result filter -> {len(data_order)} rows found')
 
-    if data_order.empty:
+    print('Filtering data ...')
+    data = filter_data_order(data)
+    time.sleep(1)
+    print(f'Result filter -> {len(data)} rows found')
+
+    if data.empty:
         input('\nIt is not possible to continue migration. Type something to return to menu... ')
     elif input('\nType C to continue migration. Otherwise, type something to return to menu... ').lower() == 'c':
         delete_last_line(num_rows=1, wait=1)
@@ -29,19 +30,18 @@ def migrate_order() -> None:
 
         if keep:
             # Converting dataframe to list
-            data_order.reset_index(level=0, inplace=True)
-            data_list = list(map(tuple, data_order.values.tolist()))
+            data_list = list(map(tuple, data.values.tolist()))
 
-            # Inserting data into postgreeSQL
             print('Inserting data into PostgreeSQL...')
-            records_list_template = ','.join(['%s'] * len(data_list))
-            insert_query = ' insert into ordem (id_ordem, nome_ordem)  values {}'.format(records_list_template)
-            result = insert_register(conn, insert_query, data_list)
+            result = insert_register(conn, 'insert into ordem (id_ordem, nome_ordem) values ', data_list)
             time.sleep(1)
 
             if result > 0: print(f'<{result}> rows inserted with success!')
 
             input('\nType something to return to menu... ')
+
+def migrate_family() -> None:
+    pass
 
 def menu() -> bool:
     print('\n### MIGRATE EXCEL TO POSTGREE ###\n')
@@ -49,6 +49,7 @@ def menu() -> bool:
     print('---------------------------\n'
           '0 - Exit\n'
           '1 - Migrate table ORDER\n'
+          '2 - Migrate table FAMILY\n' 
           '--------------------------')
 
     while True:
@@ -58,7 +59,7 @@ def menu() -> bool:
             print('Invalid option!\n')
             delete_last_line(num_rows=2, wait=2)
         else:
-            if (option < 0) or (option > 1):
+            if (option < 0) or (option > 2):
                 print('Menu doe not have this option! Try again...')
                 delete_last_line(num_rows=2, wait=2)
             else:
@@ -72,6 +73,11 @@ def menu() -> bool:
     elif option == 1:
         cleanup()
         migrate_order()
+
+    # Family ---------------------------------------------------------------------------------
+    elif option == 2:
+        cleanup()
+        migrate_family()
 
     return True
 
