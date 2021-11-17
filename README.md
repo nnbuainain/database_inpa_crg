@@ -13,7 +13,7 @@ The database is currently managed in three excel files, separately, by each of t
 
 * Develop the conceptual, logical, and physical models for the data unifying all the material in a single database.
 
-* Migrate the data to the new database
+* Migrate the data to the new database.
 
 * Make the database publicly accessible for everyone including the scientific and non-scientific communities.
 
@@ -38,6 +38,6 @@ pip install openpyxl xlsxwriter xlrd
 
 ## Current stage
 
-We are currently at the first stage, developing the conceptual and logical models.
+We are currently at the second stage, developing the project to migrate the data to the new database.
 
 
