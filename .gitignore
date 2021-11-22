@@ -5,3 +5,5 @@ __pycache__/
 .idea/
 *.o
 venv/
+excel2postgre/database.ini
+
