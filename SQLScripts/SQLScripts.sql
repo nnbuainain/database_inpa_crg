@@ -35,7 +35,6 @@ ALTER TABLE GENERO ADD CONSTRAINT FK_GENERO_2
 CREATE TABLE ESPECIE (
     id_especie INT NOT NULL PRIMARY KEY,
     nome_especie VARCHAR(100),
-    FK_num_amostra VARCHAR(20),
     FK_id_genero INT
 );
  
