@@ -14,8 +14,9 @@ def filter_data_order(data):
 
     # Reset index to start from 1
     data_order.index = data_order.index + 1
-    # Turn index into a column
-    data_order.reset_index(level=0, inplace=True)
+
+    # Turn index into a column with new column name
+    data_order = data_order.reset_index().rename(columns={'index':'id_ordem'})
 
     return data_order
 
@@ -24,8 +25,9 @@ def filter_data_family(data):
 
     # Reset index to start from 1
     data_family.index = data_family.index + 1
+
     # Turn index into a column
-    data_family.reset_index(level=0, inplace=True)
+    data_family = data_family.reset_index().rename(columns={'index':'id_familia'})
 
     # Get foreign key value from ORDER
     data_order = filter_data_order(data)
@@ -33,16 +35,32 @@ def filter_data_family(data):
 
     return data_merge
 
-def filter_data_gender(data):
-    data_gender = data.filter(['FAMILIA', 'GÊNERO'], axis=1).dropna(subset=['GÊNERO']).sort_values('GÊNERO').drop_duplicates().reset_index(drop=True)
+def filter_data_genus(data):
+    data_genus = data.filter(['FAMILIA', 'GÊNERO'], axis=1).dropna(subset=['GÊNERO']).sort_values('GÊNERO').drop_duplicates().reset_index(drop=True)
 
     # Reset index to start from 1
-    data_gender.index = data_gender.index + 1
+    data_genus.index = data_genus.index + 1
+
     # Turn index into a column
-    data_gender.reset_index(level=0, inplace=True)
+    data_genus = data_genus.reset_index().rename(columns={'index': 'id_genero'})
 
     # Get foreign key value from FAMILY
     data_family = filter_data_family(data)
-    data_merge = pd.merge(data_gender, data_family, on='FAMILIA').drop(['index_y', 'FAMILIA'], axis=1)
+    data_merge = pd.merge(data_genus, data_family, on='FAMILIA').drop(['id_ordem', 'FAMILIA'], axis=1)
+
+    return data_merge
+
+def filter_data_species(data):
+    data_species = data.filter(['GÊNERO', 'GÊNERO ESPÉCIE'], axis=1).dropna(subset=['GÊNERO ESPÉCIE']).sort_values('GÊNERO ESPÉCIE').drop_duplicates().reset_index(drop=True)
+
+    # Reset index to start from 1
+    data_species.index = data_species.index + 1
+
+    # Turn index into a column
+    data_species = data_species.reset_index().rename(columns={'index': 'id_species'})
+
+    # Get foreign key value from
+    data_genus = filter_data_genus(data)
+    data_merge = pd.merge(data_species, data_genus, on='GÊNERO').drop(['id_familia', 'GÊNERO'], axis=1)
 
     return data_merge
