@@ -59,8 +59,49 @@ def filter_data_species(data):
     # Turn index into a column
     data_species = data_species.reset_index().rename(columns={'index': 'id_species'})
 
-    # Get foreign key value from
+    # Get foreign key value from GENUS
     data_genus = filter_data_genus(data)
     data_merge = pd.merge(data_species, data_genus, on='GÊNERO').drop(['id_familia', 'GÊNERO'], axis=1)
+
+    return data_merge
+
+def filter_data_country(data):
+    data_country = data.filter(['PAÍS'], axis=1).dropna().sort_values('PAÍS').drop_duplicates().reset_index(drop=True)
+
+    # Reset index to start from 1
+    data_country.index = data_country.index + 1
+
+    # Turn index into a column with new column name
+    data_country = data_country.reset_index().rename(columns={'index':'id_pais'})
+
+    return data_country
+
+def filter_data_state(data):
+    data_state = data.filter(['PAÍS', 'EST'], axis=1).dropna(subset=['EST']).sort_values('EST').drop_duplicates().reset_index(drop=True)
+
+    # Reset index to start from 1
+    data_state.index = data_state.index + 1
+
+    # Turn index into a column
+    data_state = data_state.reset_index().rename(columns={'index':'id_estado'})
+
+    # Get foreign key value from COUNTRY
+    data_country = filter_data_country(data)
+    data_merge = pd.merge(data_state, data_country, on='PAÍS').drop('PAÍS', axis=1)
+
+    return data_merge
+
+def filter_data_locality(data):
+    data_locality = data.filter(['EST', 'LOCALIDADE','LAT_DEC','LON_DEC'], axis=1).dropna(subset=['LOCALIDADE']).sort_values('LOCALIDADE').drop_duplicates().reset_index(drop=True)
+
+    # Reset index to start from 1
+    data_locality.index = data_locality.index + 1
+
+    # Turn index into a column
+    data_locality = data_locality.reset_index().rename(columns={'index':'id_localidade'})
+
+    # Get foreign key value from STATE
+    data_state = filter_data_state(data)
+    data_merge = pd.merge(data_locality, data_state, on='EST').drop(['EST','id_pais'], axis=1)
 
     return data_merge
