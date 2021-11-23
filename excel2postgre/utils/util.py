@@ -36,5 +36,7 @@ def config(filename='database.ini', section='postgresql') -> None:
     return db
 
 def read_file():
+    print('\nReading spreadsheet file...')
     df = pd.read_excel(constant.FILE_PATH)
+
     return df
