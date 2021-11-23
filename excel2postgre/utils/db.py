@@ -1,5 +1,5 @@
 import psycopg2, time
-from utils.utils import config
+from utils.util import config
 
 def create_connection():
     conn = None
