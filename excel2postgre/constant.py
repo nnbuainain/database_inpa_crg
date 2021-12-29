@@ -1,6 +1,8 @@
 from enum import Enum
+import glob
 
-FILE_PATH = '../spreadsheets/INPA_AVES Tecidos_Novembro2021.xlsx'
+PATH = '../spreadsheets'
+AVE = glob.glob(PATH + '/INPA_AVES*.xlsx')[0]
 
 TABLE_DICT = {
     1: ['filter_data_order(sheet)', 'id_ordem, nome_ordem'],
@@ -9,15 +11,16 @@ TABLE_DICT = {
     4: ['filter_data_species(sheet)', 'id_especie, nome_especie, fk_id_genero'],
     5: ['filter_data_country(sheet)', 'id_pais, nome_pais'],
     6: ['filter_data_state(sheet)', 'id_estado, nome_estado, fk_id_pais'],
-    7: ['filter_data_locality(sheet)', 'id_localidade, nome_localidade, latitude, longitude, fk_id_estado']
+    7: ['filter_data_locality(sheet)', 'id_localidade, nome_localidade, latitude, longitude, fk_id_estado'],
+    8: ['filter_data_sample(sheet)', 'num_amostra, num_campo, num_voucher, obs, fk_id_localidade, fk_id_especie']
 }
 
 class table(Enum):
-	ordem = 1
-	familia = 2
-	genero = 3
-	especie = 4
-	pais = 5
-	estado = 6
-	localidade = 7
-
+    ordem = 1
+    familia = 2
+    genero = 3
+    especie = 4
+    pais = 5
+    estado = 6
+    localidade = 7
+    amostra = 8
