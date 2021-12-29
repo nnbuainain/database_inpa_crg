@@ -153,15 +153,28 @@ ALTER TABLE AVE ADD CONSTRAINT FK_AVE_2
     FOREIGN KEY (FK_num_amostra)
     REFERENCES AMOSTRA (num_amostra);
  
-ALTER TABLE AVE ADD CONSTRAINT FK_AVE_3
-    FOREIGN KEY (FK_nome_preparador)
-    REFERENCES PESQUISADOR (id_pesq);	
+
+CREATE TABLE PESQUISADOR_AVE (
+	id_pesq_ave INT PRIMARY KEY,
+	FK_id_pesq INT,
+	FK_num_amostra INT
+);
+
+ALTER TABLE PESQUISADOR_AVE ADD CONSTRAINT FK_PESQUISADOR_AVE
+	FOREIGN KEY (FK_num_amostra)
+	REFERENCE AMOSTRA (num_amostra);
+	
+ALTER TABLE PESQUISADOR_AVE ADD CONSTRAINT FK_PESQUISADOR_AVE_2
+	FOREIGN KEY (FK_id_pesq)
+	REFERENCE PESQUISADOR (id_pesq);
 
 CREATE TABLE SOLICITA (
     id_solicita INT PRIMARY KEY,
     num_guia INT,
     data_solicitacao DATE,
     data_devolucao DATE,
+    instituicao_solicitante VARCHAR(100)
+    pais_solicitante VARCHAR(50)
     FK_id_pesq INT,
     FK_num_amostra VARCHAR(20)
 );

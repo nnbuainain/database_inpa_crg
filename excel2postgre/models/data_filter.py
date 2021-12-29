@@ -229,3 +229,4 @@ def filter_data_researcher(data):
     return data_researcher
 
 def filter_data_ave(data):
+    
