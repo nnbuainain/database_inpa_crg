@@ -227,3 +227,5 @@ def filter_data_researcher(data):
     # Figure out how to deal with exceptions that are not names such as "doado por fulano"
 
     return data_researcher
+
+def filter_data_ave(data):
