@@ -197,3 +197,33 @@ def filter_data_sample(data):
     data_merge = data_merge.astype(object).where(pd.notnull(data_merge), None)
 
     return data_merge
+
+def filter_data_researcher(data):
+
+    # Split collectors
+    preps_aves = data['Nome preparador'].str.split('/|,|;|&| e ', expand=True)
+    collects_aves = data['nome_coletor_especime'].str.split('/|,|;|&| e ', expand=True)
+    # add collectors of herps, fish and researcher from the loan spreadsheet below
+
+    # Combine several columns of splitted collector into single column and strip
+    frames = [preps_aves, collects_aves]
+    all_researchers = pd.DataFrame({'Nome_pesquisador': pd.concat(frames).stack().apply(lambda x: x.strip()).sort_values().unique(),})
+
+    # Split first and last name
+    all_researchers[['Nome','Sobrenome']] = all_researchers["Nome_pesquisador"].str.split(" ", n = 1, expand = True)
+
+    # Filter desired columns
+    data_researcher = all_researchers.filter(['Nome', 'Sobrenome'], axis=1).reset_index(drop=True)
+
+    # Reset index to start from 1
+    data_researcher.index = data_researcher.index + 1
+
+    # Turn index into a column with new column name
+    data_researcher = data_researcher.reset_index().rename(columns={'index': 'id_pesquisador'})
+
+    # add NaN for email and institution, figure out the best way to retrieve this info later
+    data_researcher[['email', 'instituicao']] = None
+
+    # Figure out how to deal with exceptions that are not names such as "doado por fulano"
+
+    return data_researcher

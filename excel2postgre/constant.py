@@ -12,7 +12,8 @@ TABLE_DICT = {
     5: ['filter_data_country(sheet)', 'id_pais, nome_pais'],
     6: ['filter_data_state(sheet)', 'id_estado, nome_estado, fk_id_pais'],
     7: ['filter_data_locality(sheet)', 'id_localidade, nome_localidade, latitude, longitude, fk_id_estado'],
-    8: ['filter_data_sample(sheet)', 'num_amostra, num_campo, num_voucher, obs, fk_id_localidade, fk_id_especie']
+    8: ['filter_data_sample(sheet)', 'num_amostra, num_campo, num_voucher, obs, fk_id_localidade, fk_id_especie'],
+    9: ['filter_data_researcher(sheet)', 'id_pesq, nome, sobrenome, email, instituicao']
 }
 
 class table(Enum):
@@ -24,3 +25,4 @@ class table(Enum):
     estado = 6
     localidade = 7
     amostra = 8
+    pesquisador = 9
