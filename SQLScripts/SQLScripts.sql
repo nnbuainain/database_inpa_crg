@@ -135,18 +135,17 @@ ALTER TABLE PEIXE ADD CONSTRAINT FK_PEIXE_3
 	
 CREATE TABLE AVE (
     FK_num_amostra VARCHAR(20) PRIMARY KEY,
-    sexo CHAR(1),
+    sexo CHAR(5),
     expedicao VARCHAR(100),
-    tempo_ate_conservar VARCHAR(50),
+    tempo_ate_conservar VARCHAR(60),
     metodo_coleta VARCHAR(50),
-    meio_pres_def VARCHAR(50),
+    meio_pres_def VARCHAR(60),
     data_preparacao DATE,
-    coracao BOOLEAN,
-    musculo BOOLEAN,
+	musculo BOOLEAN,
+	sangue BOOLEAN,
     figado BOOLEAN,
-    sangue BOOLEAN,
-    subespecie VARCHAR(50),
-    FK_nome_preparador INT
+    coracao BOOLEAN,
+    subespecie VARCHAR(50)
 );
  
 ALTER TABLE AVE ADD CONSTRAINT FK_AVE_2
@@ -162,19 +161,19 @@ CREATE TABLE PESQUISADOR_AVE (
 
 ALTER TABLE PESQUISADOR_AVE ADD CONSTRAINT FK_PESQUISADOR_AVE
 	FOREIGN KEY (FK_num_amostra)
-	REFERENCE AMOSTRA (num_amostra);
+	REFERENCES AMOSTRA (num_amostra);
 	
 ALTER TABLE PESQUISADOR_AVE ADD CONSTRAINT FK_PESQUISADOR_AVE_2
 	FOREIGN KEY (FK_id_pesq)
-	REFERENCE PESQUISADOR (id_pesq);
+	REFERENCES PESQUISADOR (id_pesq);
 
 CREATE TABLE SOLICITA (
     id_solicita INT PRIMARY KEY,
     num_guia INT,
     data_solicitacao DATE,
     data_devolucao DATE,
-    instituicao_solicitante VARCHAR(100)
-    pais_solicitante VARCHAR(50)
+    instituicao_solicitante VARCHAR(100),
+    pais_solicitante VARCHAR(50),
     FK_id_pesq INT,
     FK_num_amostra VARCHAR(20)
 );

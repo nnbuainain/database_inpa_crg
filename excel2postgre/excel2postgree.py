@@ -55,6 +55,7 @@ def menu() -> bool:
           '7 - Migrate table LOCALITY\n'
           '8 - Migrate table SAMPLE\n'
           '9 - Migrate table RESEARCHER\n'
+          '10 - Migrate table AVE\n'
           '--------------------------')
 
     while True:
@@ -64,7 +65,7 @@ def menu() -> bool:
             print('Invalid option!\n')
             util.delete_last_line(num_rows=2, wait=2)
         else:
-            if (option < 0) or (option > 9):
+            if (option < 0) or (option > 10):
                 print('Menu doe not have this option! Try again...')
                 util.delete_last_line(num_rows=2, wait=2)
             else:

@@ -1,3 +1,6 @@
+import pandas as pd
+import numpy as np
+
 def filter_data_state(data):
     data_state = data.filter(['PAÍS', 'EST'], axis=1).dropna(subset=['EST']).sort_values('EST').drop_duplicates().reset_index(drop=True)
 
@@ -35,12 +38,6 @@ def filter_data_locality(data):
             1      2  ordem2
             2      3  ordem3
 '''
-
-import pandas as pd
-
-import numpy as np
-
-
 
 def filter_data_order(data):
     data_order = data.filter(['ORDEM'], axis=1).dropna().sort_values('ORDEM').drop_duplicates().reset_index(drop=True)
@@ -158,9 +155,7 @@ def filter_data_sample(data):
 
     ## TREAT SPECIES NAME
 
-
     data_sample = data_sample[(data_sample['GÊNERO ESPÉCIE'].isnull() == False) | (data_sample['LOCALIDADE'].isnull() == False)]
-
 
     data_sample['GÊNERO ESPÉCIE'] = data_sample['GÊNERO ESPÉCIE'].apply(lambda x: x.capitalize().strip() if type(x) is str else x)
 
@@ -203,9 +198,10 @@ def filter_data_researcher(data):
     # Split collectors
     preps_aves = data['Nome preparador'].str.split('/|,|;|&| e ', expand=True)
     collects_aves = data['nome_coletor_especime'].str.split('/|,|;|&| e ', expand=True)
+
     # add collectors of herps, fish and researcher from the loan spreadsheet below
 
-    # Combine several columns of splitted collector into single column and strip
+    # Combine several columns of splitted collector into single column, strip and make unique
     frames = [preps_aves, collects_aves]
     all_researchers = pd.DataFrame({'Nome_pesquisador': pd.concat(frames).stack().apply(lambda x: x.strip()).sort_values().unique(),})
 
@@ -229,4 +225,32 @@ def filter_data_researcher(data):
     return data_researcher
 
 def filter_data_ave(data):
-    
+
+    # Filter columns
+    data_ave = data.filter(['No TEC','SEXO','EXPEDIÇÃO', 'TEMPO ATÉ CONSERVAR','MÉTODO DE COLETA',
+                            'MEIO PRESERV. DEF.', 'DATA PREP.', 'CORAÇÃO','MÚSCULO','FÍGADO','SANGUE',
+                            'GÊNERO ESPÉCIE','LOCALIDADE'],axis=1)
+
+    # GET SUBSPECIES
+    data_ave = data_ave[(data_ave['GÊNERO ESPÉCIE'].isnull() == False) | (data_ave['LOCALIDADE'].isnull() == False)]
+    data_ave['GÊNERO ESPÉCIE'] = data_ave['GÊNERO ESPÉCIE'].apply(lambda x: x.capitalize().strip() if type(x) is str else x)
+    data_ave['GÊNERO ESPÉCIE'] = data_ave['GÊNERO ESPÉCIE'].apply(lambda x: x.replace(' (sp. nov.)', '') if type(x) is str else x)
+    data_ave['GÊNERO ESPÉCIE'] = data_ave['GÊNERO ESPÉCIE'].apply(lambda x: x.replace(' cf.', '') if type(x) is str else x)
+
+    def del_subspecies(name):
+        if name is not float and len(name.split()) > 2:
+            return name.split()[2]
+
+    data_ave['subespecie'] = data_ave['GÊNERO ESPÉCIE'].apply(lambda x: x.split()[2] if type(x) is str and len(x.split()) > 2 else None)
+
+    # Convert sample type in boolean
+
+    for i in ['CORAÇÃO', 'MÚSCULO', 'FÍGADO', 'SANGUE']:
+        data_ave[i] = data_ave[i].apply(lambda x: True if pd.isna(x) is False else False)
+
+    data_ave = data_ave.drop(['LOCALIDADE','GÊNERO ESPÉCIE'], axis=1)
+
+    data_ave = data_ave.astype(object).where(pd.notnull(data_ave), None)
+
+    return data_ave
+
