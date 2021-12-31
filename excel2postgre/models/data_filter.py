@@ -206,10 +206,10 @@ def filter_data_researcher(data):
     all_researchers = pd.DataFrame({'Nome_pesquisador': pd.concat(frames).stack().apply(lambda x: x.strip()).sort_values().unique(),})
 
     # Split first and last name
-    all_researchers[['Nome','Sobrenome']] = all_researchers["Nome_pesquisador"].str.split(" ", n = 1, expand = True)
+    all_researchers[['nome','sobrenome']] = all_researchers["Nome_pesquisador"].str.split(" ", n = 1, expand = True)
 
     # Filter desired columns
-    data_researcher = all_researchers.filter(['Nome', 'Sobrenome'], axis=1).reset_index(drop=True)
+    data_researcher = all_researchers.filter(['nome', 'sobrenome'], axis=1).reset_index(drop=True)
 
     # Reset index to start from 1
     data_researcher.index = data_researcher.index + 1
@@ -254,3 +254,40 @@ def filter_data_ave(data):
 
     return data_ave
 
+def filter_researcher_ave(data):
+    data_researcher = filter_data_researcher(data)
+    data_researcher['nome_completo'] = data_researcher[['nome','sobrenome']].apply(lambda x: x[0] + ' ' + x[1] if pd.isna(x[1]) == False else x[0],axis= 1)
+
+    data_samples = data.filter(['No TEC', 'nome_coletor_especime','GÊNERO ESPÉCIE','LOCALIDADE'], axis=1)
+    data_samples = data_samples[(data_samples['GÊNERO ESPÉCIE'].isnull() == False) | (data_samples['LOCALIDADE'].isnull() == False)]
+    data_samples['nome_coletor_especime'] = data['nome_coletor_especime'].str.split('/|,|;|&| e ')
+    data_samples = data_samples.explode('nome_coletor_especime')
+    data_samples['nome_coletor_especime'] = data_samples['nome_coletor_especime'].str.strip()
+
+    data_researcher_ave = data_researcher.merge(data_samples, right_on='nome_coletor_especime', left_on='nome_completo')[['id_pesquisador', 'No TEC']].sort_values(by='No TEC').reset_index(drop=True)
+
+    data_researcher_ave.index = data_researcher_ave.index + 1
+    data_researcher_ave = data_researcher_ave.reset_index().rename(columns={'index':'id_pesq_ave','No TEC': 'num_amostra'})
+
+    return data_researcher_ave
+
+def filter_collector(data):
+    data_researcher = filter_data_researcher(data)
+    data_researcher['nome_completo'] = data_researcher[['nome', 'sobrenome']].apply(lambda x: x[0] + ' ' + x[1] if pd.isna(x[1]) == False else x[0], axis=1)
+
+    data_samples = data.filter(['No TEC', 'Nome preparador', 'DATA COLETA','GÊNERO ESPÉCIE', 'LOCALIDADE'], axis=1)
+    data_samples = data_samples[(data_samples['GÊNERO ESPÉCIE'].isnull() == False) | (data_samples['LOCALIDADE'].isnull() == False)]
+    data_samples['Nome preparador'] = data['Nome preparador'].str.split('/|,|;|&| e ')
+    data_samples = data_samples.explode('Nome preparador')
+    data_samples['Nome preparador'] = data_samples['Nome preparador'].str.strip()
+
+    data_collector = data_researcher.merge(data_samples, right_on='Nome preparador', left_on='nome_completo')[['DATA COLETA','No TEC','id_pesquisador']].sort_values(by='No TEC').reset_index(drop=True)
+
+    data_collector.index = data_collector.index + 1
+    data_collector = data_collector.reset_index().rename(columns={'index': 'id_coleta', 'No TEC': 'num_amostra', 'DATA COLETA': 'data_coleta'})
+
+    # WARNING!! Check out what is being done when day, month or year is missing
+    data_collector['data_coleta'] = pd.to_datetime(data_collector['data_coleta'], format='%Y-%m-%d', errors='coerce')
+    data_collector = data_collector.astype(object).where(pd.notnull(data_collector), None)
+
+    return data_collector
