@@ -38,6 +38,8 @@ pip install openpyxl xlsxwriter xlrd
 
 ## Current stage
 
-We are currently at the second stage, developing the project to migrate the data to the new database.
+We are currently at the third stage, developing the project to migrate the data to the new database. 
+
+* The bird database is already available for consultation in SQL formating! The Solicita table which records samples loans is not available yet.
 
 
