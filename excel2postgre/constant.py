@@ -14,7 +14,7 @@ TABLE_DICT = {
     7: ['filter_data_locality(sheet)', 'id_localidade, nome_localidade, latitude, longitude, fk_id_estado'],
     8: ['filter_data_sample(sheet)', 'num_amostra, num_campo, num_voucher, obs, fk_id_localidade, fk_id_especie'],
     9: ['filter_data_researcher(sheet)', 'id_pesq, nome, sobrenome, email, instituicao'],
-    10: ['filter_data_ave(sheet)', 'fk_num_amostra, sexo, expedicao, tempo_ate_conservar, metodo_coleta,meio_pres_def,data_preparacao,musculo,sangue,figado,coracao,subespecie'],
+    10: ['filter_data_ave(sheet)', 'fk_num_amostra, sexo, expedicao, tempo_ate_conservar, metodo_coleta,meio_pres_def,data_preparacao,musculo,sangue,figado,coracao,subespecie,num_preparador'],
     11: ['filter_researcher_ave(sheet)', 'id_pesq_ave, fk_id_pesq,fk_num_amostra'],
     12: ['filter_collector(sheet)', 'id_coleta, data_coleta, fk_num_amostra, fk_id_pesq']
 }

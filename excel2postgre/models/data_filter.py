@@ -143,7 +143,6 @@ def filter_data_country(data):
 
     return data_country
 
-
 def filter_data_sample(data):
     data_sample = data.filter(['No TEC', 'num_voucher', 'num_campo', 'GÊNERO ESPÉCIE', 'LOCALIDADE', 'OBSERVAÇÕES', 'LAT_DEC', 'LON_DEC'],axis=1)
 
@@ -228,8 +227,8 @@ def filter_data_ave(data):
 
     # Filter columns
     data_ave = data.filter(['No TEC','SEXO','EXPEDIÇÃO', 'TEMPO ATÉ CONSERVAR','MÉTODO DE COLETA',
-                            'MEIO PRESERV. DEF.', 'DATA PREP.', 'CORAÇÃO','MÚSCULO','FÍGADO','SANGUE',
-                            'GÊNERO ESPÉCIE','LOCALIDADE'],axis=1)
+                            'MEIO PRESERV. DEF.', 'DATA PREP.', 'MÚSCULO','SANGUE','FÍGADO','CORAÇÃO',
+                            'GÊNERO ESPÉCIE','LOCALIDADE','Sigla prep', 'Nº prepa'],axis=1)
 
     # GET SUBSPECIES
     data_ave = data_ave[(data_ave['GÊNERO ESPÉCIE'].isnull() == False) | (data_ave['LOCALIDADE'].isnull() == False)]
@@ -243,12 +242,16 @@ def filter_data_ave(data):
 
     data_ave['subespecie'] = data_ave['GÊNERO ESPÉCIE'].apply(lambda x: x.split()[2] if type(x) is str and len(x.split()) > 2 else None)
 
+
+    # GET NUM_PREPARADOR AINDA NÃO TESTADO!
+    data_ave['num_preparador'] = data_ave[['Sigla prep', 'Nº prepa']].apply(lambda x: str(x[0]) + ' ' + str(x[1]) if pd.isna(x[1]) == False else x[0], axis=1)
+
     # Convert sample type in boolean
 
-    for i in ['CORAÇÃO', 'MÚSCULO', 'FÍGADO', 'SANGUE']:
+    for i in ['MÚSCULO', 'SANGUE', 'FÍGADO', 'CORAÇÃO']:
         data_ave[i] = data_ave[i].apply(lambda x: True if pd.isna(x) is False else False)
 
-    data_ave = data_ave.drop(['LOCALIDADE','GÊNERO ESPÉCIE'], axis=1)
+    data_ave = data_ave.drop(['LOCALIDADE','GÊNERO ESPÉCIE','Sigla prep', 'Nº prepa'], axis=1)
 
     data_ave = data_ave.astype(object).where(pd.notnull(data_ave), None)
 
@@ -276,6 +279,7 @@ def filter_collector(data):
     data_researcher['nome_completo'] = data_researcher[['nome', 'sobrenome']].apply(lambda x: x[0] + ' ' + x[1] if pd.isna(x[1]) == False else x[0], axis=1)
 
     data_samples = data.filter(['No TEC', 'Nome preparador', 'DATA COLETA','GÊNERO ESPÉCIE', 'LOCALIDADE'], axis=1)
+
     data_samples = data_samples[(data_samples['GÊNERO ESPÉCIE'].isnull() == False) | (data_samples['LOCALIDADE'].isnull() == False)]
     data_samples['Nome preparador'] = data['Nome preparador'].str.split('/|,|;|&| e ')
     data_samples = data_samples.explode('Nome preparador')
