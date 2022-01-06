@@ -49,7 +49,8 @@ def filter_data_order(data):
     data_order = data.filter(['ordem'], axis=1).dropna().sort_values('ordem').drop_duplicates().reset_index(drop=True)
 
     # Standardize order writing and remove spaces
-    data_order['ordem'] = data_order['ordem'].apply(lambda x: x.capitalize().strip())
+    data_order['ordem'] = data_order['ordem'].apply(lambda x: x.capitalize().strip()).drop_duplicates().dropna()
+
 
     # Reset index to start from 1
     data_order.index = data_order.index + 1
@@ -116,7 +117,7 @@ def filter_data_species(data):
 
     patterns = [r'sp[.]gr[.]', r'sp[.]aff[.]', r'sp[.] grupo ', r'sp\b(.*)', r'sp\d+\b(.*)',
     r'aff[.]', r'\baff\b', r'cf[.]', r'cf/', r'\bcf\b', r'gr[.]', r'\bgr\b', r'rod[.]', r'peq[.]',
-    r'x[-]', r'femea[-]', r'[-].*', r'ou.*',r',']
+    r'x[-]', r'\W+femea.*', r'[-].*', r'ou.*',r',',r'[?]',r'\*',r'\Wjoelho.*',r'\Wpapo\b.*']
 
     data_species['genero_especie'] = data_species['genero_especie'].replace(patterns,'',regex=True)
 
@@ -124,7 +125,7 @@ def filter_data_species(data):
 
     #This should be included in the sample section and not the specie
     data_species['genero_especie_obs'] = data_species.genero_especie.str.extract(
-        r'(sp\b.*|sp\d+\b.*|aff[.].*|cf[.].*|gr[.].*|rod[.].*|\baff\b|\bgr\b|\bcf\b|\bcf/.*)')
+        r'(sp\b.*|sp\d+\b.*|aff[.].*|cf[.].*|gr[.].*|rod[.].*|\baff\b|\bgr\b|\bcf\b|\bcf/.*|\Wpapo\b.*|\Wjoelho.*|[?]|\W+femea.*|x[-]|ou.*)')
 
     # remove duplicates after processing
     data_species = data_species.filter(['genero', 'genero_especie'], axis=1).sort_values('genero_especie').drop_duplicates(
@@ -138,60 +139,55 @@ def filter_data_species(data):
 
     # Get foreign key value from GENUS
     data_genus = filter_data_genus(data)
-    data_merge = pd.merge(data_species, data_genus, on='genero').drop(['id_familia', 'genero'], axis=1)
+    data_merge = pd.merge(data_species, data_genus,how='left', on='genero').drop(['id_familia', 'genero'], axis=1)
     data_merge = data_merge.astype(object).where(pd.notnull(data_merge), None)
 
     return data_merge
 
 def filter_data_sample(data):
-    data_sample = data.filter(
-        ['num_amostra', 'num_voucher', 'num_campo', 'genero_especie', 'localidade', 'observacao', 'latitude',
-         'longitude'], axis=1)
+    data_sample = data.filter(['num_amostra', 'num_voucher', 'num_campo', 'genero_especie',
+                               'localidade', 'observacao', 'latitude','longitude'], axis=1)
+
+    # Drop samples with no infor for species and locality which are blanck spaces in the spreadsheet
+    data_sample = data_sample[
+        (data_sample['genero_especie'].isnull() == False) | (data_sample['localidade'].isnull() == False)]
 
     data_locality = filter_data_locality(data)
 
     data_locality['id_localidade'] = data_locality['id_localidade'].astype(pd.Int64Dtype())
 
+    ## Muito cuidade aqui, atente-se ao numero de linhas do df antes e depois do merge
     data_sample = pd.merge(data_sample, data_locality, how='left', on=['localidade', 'latitude', 'longitude'])
 
     ## TREAT SPECIES NAME
+    patterns = [r'sp[.]gr[.]', r'sp[.]aff[.]', r'sp[.] grupo ', r'sp\b(.*)', r'sp\d+\b(.*)',
+    r'aff[.]', r'\baff\b', r'cf[.]', r'cf/', r'\bcf\b', r'gr[.]', r'\bgr\b', r'rod[.]', r'peq[.]',
+    r'x[-]', r'\W+femea.*', r'[-].*', r'ou.*',r',',r'[?]',r'\*',r'\Wjoelho.*',r'\Wpapo\b.*']
 
-    data_sample = data_sample[
-        (data_sample['genero_especie'].isnull() == False) | (data_sample['localidade'].isnull() == False)]
+    data_sample['genero_especie'] = data_sample['genero_especie'].replace(patterns,'',regex=True)
 
-    data_sample['genero_especie'] = data_sample['genero_especie'].apply(
-        lambda x: x.capitalize().strip() if type(x) is str else x)
+    data_sample['genero_especie'] = data_sample['genero_especie'].replace('', None, regex=True)
 
-    # remove 'cf.', '(sp. nov.)' and 'sp' from species name
-    data_sample['genero_especie'] = data_sample['genero_especie'].apply(
-        lambda x: x.replace(' (sp. nov.)', '') if type(x) is str else x)
-    data_sample['genero_especie'] = data_sample['genero_especie'].apply(
-        lambda x: x.replace(' cf.', '') if type(x) is str else x)
+    data_sample['genero_especie'] = data_sample['genero_especie'].apply(lambda x: x if type(x) != str else x.split()[0].strip().capitalize() + ' ' + x.split()[1].strip().lower() if len(x.split()) > 1 else x.split()[0].strip().capitalize() + ' sp.')
 
-    # Eliminate trinominal nomenclature (subspecies) and set sp. to unidentified species
-    # TRY TO REFACTOR THIS!
-    def del_subspecies(name):
-        if type(name) is not str:
-            return name
-        elif len(name.split()) == 1:
-            return name + ' sp.'
-        elif len(name.split()) > 1:
-            return name.split()[0] + ' ' + name.split()[1].lower()
-        else:
-            return name
-
-    data_sample['genero_especie'] = data_sample['genero_especie'].apply(del_subspecies)
+    # get observations about samples not fully identified
+    # Adicionar regex papo, joelho, [?], conferir as de femeas
+    data_sample['genero_especie_obs'] = data_sample.genero_especie.str.extract(
+        r'(sp\b.*|sp\d+\b.*|aff[.].*|cf[.].*|gr[.].*|rod[.].*|\baff\b|\bgr\b|\bcf\b|\bcf/.*|\Wpapo\b.*|\Wjoelho.*|[?]|\W+femea.*|x[-]|ou.*)')
 
     data_species = filter_data_species(data)
+
     data_species['id_especie'] = data_species['id_especie'].astype(pd.Int64Dtype())
 
     data_merge = pd.merge(data_sample, data_species, how='left', on=['genero_especie'])
 
     data_merge = data_merge.filter(
-        ['num_amostra', 'num_campo', 'num_voucher', 'observacao', 'id_localidade', 'id_especie'], axis=1)
+        ['num_amostra', 'num_campo', 'num_voucher', 'observacao', 'id_localidade', 'id_especie','genero_especie_obs'], axis=1)
+
+    # Delete this if this cleaning is done during importing of spreadsheet
+    data_merge['num_campo'] = data_merge['num_campo'].apply(lambda x: x.strip() if type(x) is str else x)
 
     # Replace empty spaces and NaN by None Type
-    data_merge['num_campo'] = data_merge['num_campo'].apply(lambda x: x.strip() if type(x) is str else x)
     data_merge['num_campo'] = data_merge['num_campo'].replace('', np.nan)
     data_merge['num_campo'].replace(r'^\s+$', np.nan, regex=True, inplace=True)
     data_merge = data_merge.astype(object).where(pd.notnull(data_merge), None)
@@ -324,44 +320,3 @@ def filter_collector(data):
 
 # Modificar SQL da base de dados de peixe para incluir as demais colunas que ficaram faltando
 # Verificar todos os campos que estão faltando em comum por exemplo pais e municipio
-
-
-
-### CONCATENATE ALL DATABASES
-### IMPORT three databases, change column names, merge see what happens
-
-# Load datasets
-# ave = pd.read_excel('./spreadsheets/INPA_AVES Tecidos_Dezembro2021.xlsx')
-# herps = pd.read_excel('./spreadsheets/BDHerpeto atualizado 28.12.2021.xlsx')
-# fish = pd.read_excel('./spreadsheets/Banco de dados de Peixes_2021_05_31.xlsx',header=1)
-
-#
-# peixe['genero_especie'] = peixe[['genero', 'especie']].apply(lambda x: str(x[0]) + ' ' + str(x[1]) if pd.isna(x[1]) == False else str(x[0]), axis=1)
-
-## Rename columns
-# ave = ave.drop(['LAT G', 'LAT M', 'LAT S', 'LAT_N/S', 'LON G', 'LON M', 'LON S', 'LON_E/W'],axis=1).rename(columns={'No TEC':'num_amostra', 'numero':'so_numero_amostra','Sigla prep':'sigla_preparador','Nº prepa':'numero_preparador', 'Nome preparador':'nome_preparador', 'Sigla campo':'sigla_num_campo', 'Nº campo':'so_numero_campo', 'ORDEM':'ordem', 'FAMILIA':'familia', 'GÊNERO':'genero', 'ESPÉCIE':'especie', 'GÊNERO ESPÉCIE':'genero_especie', 'SEXO':'sexo', 'EXPEDIÇÃO':'expedicao', 'PAÍS':'pais', 'EST':'estado', 'LOCALIDADE':'localidade', 'LAT_DEC':'latitude', 'LON_DEC':'longitude', 'TEMPO ATÉ CONSERVAR':'tempo_ate_conservar', 'MÉTODO DE COLETA':'metodo_coleta', 'MÚSCULO':'musculo', 'CORAÇÃO':'coracao', 'FÍGADO':'figado', 'SANGUE':'sangue', 'MEIO PRESERV. DEF.':'meio_preserv_def', 'DATA COLETA':'data_coleta', 'DATA PREP.':'data_preparacao', 'OBSERVAÇÕES':'observacao', 'EMPRESTADO':'emprestado', 'DATA':'data_emprestimo_1', 'GUIA N°':'num_guia_emprestimo_1', 'PARA':'pessoa_emprestimo_1', 'Obs':'obs_emprestimo_1', 'EMPRESTADO.1':'emprestado_2', 'DATA.1':'data_emprestimo_2', 'GUIA N°.1':'num_guia_emprestimo_2', 'PARA.1':'pessoa_emprestimo_2', 'EMPRESTADO.2':'emprestado_3', 'DATA.2':'data_emprestimo_3', 'GUIA N°.2':'num_guia_emprestimo_3', 'PARA.2':'pessoa_emprestimo_3', 'EMPRESTADO.3':'emprestado_4', 'DATA.3':'data_emprestimo_4', 'GUIA N°.3':'num_guia_emprestimo_4', 'PARA.3':'pessoa_emprestimo_4'})
-# herps = herps.rename(columns={'INPA - HT':'num_amostra', 'INPA-H':'num_voucher', 'No. CAMPO':'num_campo', 'DATA':'data_coleta', 'ORDEM':'ordem', 'FAMÍLIA':'familia', 'GÊNERO':'genero','ESPÉCIE':'genero_especie', 'LOCALIDADE':'localidade','MUNICÍPIO':'municipio', 'ESTADO':'estado', 'LAT_DEC':'latitude', 'LONG_DEC':'longitude', 'COLETOR':'nome_coletor', 'OBSERVAÇÕES':'observacao'})
-# fish  = fish.drop(['Unnamed: 3'],axis=1).rename(columns={'STATUS':'status', 'CAIXA':'num_caixa', 'Número de DNA':'num_amostra', 'Número de CAMPO':'num_campo', 'VOUCHER':'num_voucher', 'ORDEM':'ordem', 'FAMÍLIA':'familia', 'GÊNERO':'genero', 'ESPÉCIE':'especie', 'NOME COMUM':'nome_comum', 'DATA DE COLETA':'data_coleta', 'País':'pais', 'ESTADO':'estado', 'MUNICÍPIO':'municipio', 'DRENAGEM':'drenagem', 'SUBDRENAGEM':'subdrenagem', 'LOCAL DE PESCA':'localidade_pesca', 'LOCAL DE COLETA':'localidade', 'LATITUDE':'latitude', 'LONGITUDE':'longitude', 'COLETORES':'nome_coletor', 'RESPONSÁVEL/PROJETOS':'responsavel_projetos', 'Comprimento Padrão (cm)':'comprimento_padrao', 'OBSERVAÇÕES':'observacao'})
-
-# Set NaNs to None
-# fish = fish.astype(object).where(pd.notnull(fish), None)
-# herps = herps.astype(object).where(pd.notnull(herps), None)
-# ave = ave.astype(object).where(pd.notnull(ave), None)
-
-
-## Standardize spreadsheets to have all necessary fields
-## This is a temporary step until all attributes are properly corrected and inserted
-
-# herps['pais'] = 'Brasil'
-# herps['genero_especie'] = herps['genero_especie'].apply(lambda x: x.replace('  ',' ') if type(x) == str else x)
-# for i in ['ordem', 'familia', 'genero', 'genero_especie']:
-#     herps[i] = herps[i].apply(lambda x: x.capitalize().strip() if type(x) is str else x)
-
-
-
-
-
-# data_concat = pd.concat([ave,herps,fish],keys=['ave','herps','peixe'])
-# teste_filter = data_concat.filter(['num_amostra','num_voucher','num_campo','nome_coletor','ordem','familia','genero_especie','estado','localidade','observacao','data_coleta'])
-
-
