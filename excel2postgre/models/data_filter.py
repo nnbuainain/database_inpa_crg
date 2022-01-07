@@ -123,10 +123,6 @@ def filter_data_species(data):
 
     data_species['genero_especie'] = data_species['genero_especie'].apply(lambda x: x.split()[0].strip().capitalize() + ' ' + x.split()[1].strip().lower() if len(x.split()) > 1 else x.split()[0].strip().capitalize() + ' sp.')
 
-    #This should be included in the sample section and not the specie
-    data_species['genero_especie_obs'] = data_species.genero_especie.str.extract(
-        r'(sp\b.*|sp\d+\b.*|aff[.].*|cf[.].*|gr[.].*|rod[.].*|\baff\b|\bgr\b|\bcf\b|\bcf/.*|\Wpapo\b.*|\Wjoelho.*|[?]|\W+femea.*|x[-]|ou.*)')
-
     # remove duplicates after processing
     data_species = data_species.filter(['genero', 'genero_especie'], axis=1).sort_values('genero_especie').drop_duplicates(
         subset=['genero_especie'], keep='first').reset_index(drop=True)
@@ -149,12 +145,11 @@ def filter_data_sample(data):
                                'localidade', 'observacao', 'latitude','longitude'], axis=1)
 
     # Drop samples with no infor for species and locality which are blanck spaces in the spreadsheet
-    data_sample = data_sample[
-        (data_sample['genero_especie'].isnull() == False) | (data_sample['localidade'].isnull() == False)]
+    data_sample = data_sample[(data_sample['genero_especie'].isnull() == False) | (data_sample['localidade'].isnull() == False)]
 
     data_locality = filter_data_locality(data)
 
-    data_locality['id_localidade'] = data_locality['id_localidade'].astype(pd.Int64Dtype())
+    # data_locality['id_localidade'] = data_locality['id_localidade'].astype(pd.Int64Dtype())
 
     ## Muito cuidade aqui, atente-se ao numero de linhas do df antes e depois do merge
     data_sample = pd.merge(data_sample, data_locality, how='left', on=['localidade', 'latitude', 'longitude'])
@@ -197,21 +192,24 @@ def filter_data_sample(data):
 
 def filter_data_researcher(data):
     # Split collectors
-    preps_aves = data['nome_preparador'].str.split('/|,|;|&| e ', expand=True)
-    collects_aves = data['nome_coletor_especime'].str.split('/|,|;|&| e ', expand=True)
+    collector = data['nome_coletor'].str.split('/|,|;|&| e ', expand=True)
+    collector_voucher_aves = data['nome_coletor_especime'].str.split('/|,|;|&| e ', expand=True)
 
     # add collectors of herps, fish and researcher from the loan spreadsheet below
 
     # Combine several columns of splitted collector into single column, strip and make unique
-    frames = [preps_aves, collects_aves]
-    all_researchers = pd.DataFrame(
-        {'Nome_pesquisador': pd.concat(frames).stack().apply(lambda x: x.strip()).sort_values().unique(), })
+    frames = [collector, collector_voucher_aves]
+
+    all_researchers_stacked = pd.DataFrame(
+        {'nome_pesquisador': pd.concat(frames).stack().apply(lambda x: x.strip()).sort_values().unique(), })
+    all_researchers_stacked['nome_pesquisador'].replace('',np.nan,inplace=True)
+    all_researchers_stacked = all_researchers_stacked.dropna()
 
     # Split first and last name
-    all_researchers[['nome', 'sobrenome']] = all_researchers["Nome_pesquisador"].str.split(" ", n=1, expand=True)
+    all_researchers_stacked[['nome_pesquisador', 'sobrenome_pesquisador']] = all_researchers_stacked["nome_pesquisador"].str.split(" ", n=1, expand=True)
 
     # Filter desired columns
-    data_researcher = all_researchers.filter(['nome', 'sobrenome'], axis=1).reset_index(drop=True)
+    data_researcher = all_researchers_stacked.reset_index(drop=True)
 
     # Reset index to start from 1
     data_researcher.index = data_researcher.index + 1
@@ -267,18 +265,17 @@ def filter_data_ave(data):
 
 def filter_researcher_ave(data):
     data_researcher = filter_data_researcher(data)
-    data_researcher['nome_completo'] = data_researcher[['nome', 'sobrenome']].apply(
+    data_researcher['nome_completo_pesquisador'] = data_researcher[['nome_pesquisador', 'sobrenome_pesquisador']].apply(
         lambda x: x[0] + ' ' + x[1] if pd.isna(x[1]) == False else x[0], axis=1)
 
-    data_samples = data.filter(['num_amostra', 'nome_coletor_especime', 'genero_especie', 'localidade'], axis=1)
-    data_samples = data_samples[
-        (data_samples['genero_especie'].isnull() == False) | (data_samples['localidade'].isnull() == False)]
-    data_samples['nome_coletor_especime'] = data['nome_coletor_especime'].str.split('/|,|;|&| e ')
-    data_samples = data_samples.explode('nome_coletor_especime')
-    data_samples['nome_coletor_especime'] = data_samples['nome_coletor_especime'].str.strip()
+    data_sample = data.filter(['num_amostra', 'nome_coletor_especime', 'genero_especie', 'localidade'], axis=1)
+    data_sample = data_sample[
+        (data_sample['genero_especie'].isnull() == False) | (data_sample['localidade'].isnull() == False)]
+    data_sample['nome_coletor_especime'] = data['nome_coletor_especime'].str.split('/|,|;|&| e ')
+    data_sample = data_sample.explode('nome_coletor_especime')
+    data_sample['nome_coletor_especime'] = data_sample['nome_coletor_especime'].str.strip()
 
-    data_researcher_ave = \
-    data_researcher.merge(data_samples, right_on='nome_coletor_especime', left_on='nome_completo')[
+    data_researcher_ave = data_researcher.merge(data_sample, right_on='nome_coletor_especime', left_on='nome_completo_pesquisador')[
         ['id_pesquisador', 'num_amostra']].sort_values(by='num_amostra').reset_index(drop=True)
 
     data_researcher_ave.index = data_researcher_ave.index + 1
@@ -290,24 +287,23 @@ def filter_researcher_ave(data):
 
 def filter_collector(data):
     data_researcher = filter_data_researcher(data)
-    data_researcher['nome_completo'] = data_researcher[['nome', 'sobrenome']].apply(
+    data_researcher['nome_completo'] = data_researcher[['nome_pesquisador', 'sobrenome_pesquisador']].apply(
         lambda x: x[0] + ' ' + x[1] if pd.isna(x[1]) == False else x[0], axis=1)
 
-    data_samples = data.filter(['num_amostra', 'nome_preparador', 'DATA COLETA', 'genero_especie', 'localidade'],
+    data_sample = data.filter(['num_amostra', 'nome_coletor', 'data_coleta', 'genero_especie', 'localidade'],
                                axis=1)
 
-    data_samples = data_samples[
-        (data_samples['genero_especie'].isnull() == False) | (data_samples['localidade'].isnull() == False)]
-    data_samples['nome_preparador'] = data['nome_preparador'].str.split('/|,|;|&| e ')
-    data_samples = data_samples.explode('nome_preparador')
-    data_samples['nome_preparador'] = data_samples['nome_preparador'].str.strip()
+    data_sample = data_sample[(data_sample['genero_especie'].isnull() == False) | (data_sample['localidade'].isnull() == False)]
+    data_sample['nome_coletor'] = data['nome_coletor'].str.split('/|,|;|&| e ')
+    data_sample = data_sample.explode('nome_coletor')
+    data_sample['nome_coletor'] = data_sample['nome_coletor'].str.strip()
 
-    data_collector = data_researcher.merge(data_samples, right_on='nome_preparador', left_on='nome_completo')[
-        ['DATA COLETA', 'num_amostra', 'id_pesquisador']].sort_values(by='num_amostra').reset_index(drop=True)
+    data_collector = data_researcher.merge(data_sample, right_on='nome_coletor', left_on='nome_completo')[
+        ['data_coleta', 'num_amostra', 'id_pesquisador']].sort_values(by='num_amostra').reset_index(drop=True)
 
     data_collector.index = data_collector.index + 1
     data_collector = data_collector.reset_index().rename(
-        columns={'index': 'id_coleta', 'num_amostra': 'num_amostra', 'DATA COLETA': 'data_coleta'})
+        columns={'index': 'id_coleta', 'num_amostra': 'num_amostra', 'data_coleta': 'data_coleta'})
 
     # WARNING!! Check out what is being done when day, month or year is missing
     data_collector['data_coleta'] = pd.to_datetime(data_collector['data_coleta'], format='%Y-%m-%d', errors='coerce')
