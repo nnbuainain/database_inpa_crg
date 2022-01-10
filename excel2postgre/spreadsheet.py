@@ -45,6 +45,7 @@ for s in [ave, herps]:
 herps['pais'] = 'Brasil'
 herps['genero_especie'] = herps['genero_especie'].apply(lambda x: x.replace('  ',' ') if type(x) == str else x)
 
+ave['municipio'] = None
 
 ## Replace collector's name in herpetology spreadsheet
 
