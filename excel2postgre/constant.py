@@ -15,7 +15,7 @@ TABLE_DICT = {
     8: ['filter_data_sample(sheet)', 'num_amostra, num_campo, num_voucher, municipio, obs, identificacao_especie_obs, colecao, fk_id_localidade, fk_id_especie'],
     9: ['filter_data_researcher(sheet)', 'id_pesq, nome_pesquisador, sobrenome_pesquisador, email_pesquisador, instituicao_pesquisador'],
     10: ['filter_data_ave(sheet)', 'fk_num_amostra, sexo, sexo_obs, expedicao, tempo_ate_conservar, metodo_coleta, meio_pres_def, data_preparacao, data_preparacao_obs, musculo, sangue, figado, coracao, subespecie, num_preparador'],
-    11: ['filter_data_researcher_ave(sheet)', 'id_pesq_ave, fk_id_pesq,fk_num_amostra'],
+    11: ['filter_data_collect_voucher(sheet)', 'id_pesq_ave, fk_id_pesq,fk_num_amostra'],
     12: ['filter_data_collect(sheet)', 'id_coleta, data_coleta, data_coleta_obs, fk_num_amostra, fk_id_pesq']
 }
 
@@ -30,6 +30,6 @@ class table(Enum):
     amostra = 8
     pesquisador = 9
     ave = 10
-    pesquisador_ave = 11
+    coleta_voucher = 11
     coleta = 12
     herpeto = 12

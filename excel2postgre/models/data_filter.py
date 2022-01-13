@@ -503,7 +503,7 @@ def filter_data_ave(data):
 
     return data_ave
 
-def filter_data_researcher_ave(data):
+def filter_data_collect_voucher(data):
     """Make a list of collecting records, associating every bird sample
     to their voucher collector individually to create Table 'PESQUISADOR_AVE'
     and export to the Database
@@ -528,7 +528,7 @@ def filter_data_researcher_ave(data):
         d) 'localidade' : locality where sample was colllected -> str
     Returns
     -------
-    data_researcher_ave: A pandas DataFrame with processed data and
+    data_collect_voucher: A pandas DataFrame with processed data and
     the columns necessary to create table 'PESQUISADOR_AVE'
     """
 
@@ -557,17 +557,17 @@ def filter_data_researcher_ave(data):
     data_sample['nome_coletor_especime'] = data_sample['nome_coletor_especime'].str.strip()
 
     # Merge sample and researchers dataframes, keep only columns of interest, sort values and reset index
-    data_researcher_ave = data_researcher.merge(data_sample, right_on='nome_coletor_especime', left_on='nome_completo_pesquisador')[
+    data_collect_voucher = data_researcher.merge(data_sample, right_on='nome_coletor_especime', left_on='nome_completo_pesquisador')[
         ['id_pesquisador', 'num_amostra']].sort_values(by='num_amostra').reset_index(drop=True)
 
     # Reset index to start at 1
-    data_researcher_ave.index = data_researcher_ave.index + 1
+    data_collect_voucher.index = data_collect_voucher.index + 1
 
     # Rename columns
-    data_researcher_ave = data_researcher_ave.reset_index().rename(
+    data_collect_voucher = data_collect_voucher.reset_index().rename(
         columns={'index': 'id_pesq_ave', 'num_amostra': 'num_amostra'})
 
-    return data_researcher_ave
+    return data_collect_voucher
 
 def filter_data_collect(data):
     """Make a list of collecting records, associating every sample
@@ -579,7 +579,7 @@ def filter_data_collect(data):
     in the same cell
 
     These are collectors of genetic samples only. For collectors of
-    voucher specimens of birds see filter_researcher_ave()
+    voucher specimens of birds see filter_data_collect_voucher()
 
     A initial list of all researchers in the database is retrieved with
     filter_data_researcher()
