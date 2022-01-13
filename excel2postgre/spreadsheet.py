@@ -75,7 +75,7 @@ def load_n_clean_dataframes():
     print('Merging data frames ...')
 
     # Merge the three dataframes
-    data = pd.concat([ave,  herps], keys=['ave', 'herps'])
+    data = pd.concat([ave,  herps], keys=['aves', 'herpeto'])
 
     print('Spreadsheets successfully imported ...')
     return data

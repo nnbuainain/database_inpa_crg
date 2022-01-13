@@ -89,9 +89,10 @@ CREATE TABLE AMOSTRA (
     num_voucher VARCHAR(50),
 	municipio VARCHAR(255),
 	obs VARCHAR(300),
+	identificacao_especie_obs VARCHAR(100),
+	colecao VARCHAR(50) CHECK (colecao in ('aves','herpeto','peixes')),
     FK_id_localidade INT,
-    FK_id_especie INT,
-    identificacao_especie_obs VARCHAR(100)
+    FK_id_especie INT
 );
  
 CREATE TABLE PESQUISADOR (
@@ -127,7 +128,7 @@ ALTER TABLE PEIXE ADD CONSTRAINT FK_PEIXE_3
 	
 CREATE TABLE AVE (
     FK_num_amostra VARCHAR(20) PRIMARY KEY,
-    sexo CHAR(1),
+    sexo CHAR(1) CHECK (sexo in ('M','F','I')),
 	sexo_obs VARCHAR(100),
     expedicao VARCHAR(100),
     tempo_ate_conservar VARCHAR(60),

@@ -319,6 +319,8 @@ def filter_data_sample(data):
     # Drop samples with no information for species and locality which are blank spaces in the spreadsheet
     data_sample = data_sample[(data_sample['genero_especie'].isnull() == False) | (data_sample['localidade'].isnull() == False)]
 
+    data_sample['colecao'] = data_sample.index.get_level_values(0)
+
     # Replace NaNs by None, this will also make latitude and longitude pd.objects
     # This is necessary to match these fields in the data_locality df and merge
     data_sample = data_sample.astype(object).where(pd.notnull(data_sample), None)
@@ -363,7 +365,7 @@ def filter_data_sample(data):
 
     # Keep only relevant columns
     data_merge = data_merge.filter(
-        ['num_amostra', 'num_campo', 'num_voucher', 'municipio', 'observacao', 'genero_especie_obs', 'id_localidade', 'id_especie'], axis=1)
+        ['num_amostra', 'num_campo', 'num_voucher', 'municipio', 'observacao', 'genero_especie_obs', 'colecao', 'id_localidade', 'id_especie'], axis=1)
 
     # Replace empty spaces to nan in column 'num_campo'
     data_merge['num_campo'] = data_merge['num_campo'].replace('', np.nan)
@@ -464,7 +466,7 @@ def filter_data_ave(data):
     the columns necessary to create table 'AVE'
     """
     # Filter rows from the bird collection and filter columns of interest
-    data_ave = data.loc[['ave']].filter(['num_amostra', 'sexo', 'sexo_obs', 'expedicao', 'tempo_ate_conservar', 'metodo_coleta',
+    data_ave = data.loc[['aves']].filter(['num_amostra', 'sexo', 'sexo_obs', 'expedicao', 'tempo_ate_conservar', 'metodo_coleta',
                             'meio_preserv_def', 'data_preparacao', 'data_preparacao_obs', 'musculo', 'sangue', 'figado', 'coracao',
                             'genero_especie', 'localidade', 'sigla_preparador', 'numero_preparador'], axis=1)
 
@@ -538,7 +540,7 @@ def filter_data_researcher_ave(data):
         lambda x: x[0] + ' ' + x[1] if pd.isna(x[1]) == False else x[0], axis=1)
 
     # Get columns of interest only in the bird ('ave') records
-    data_sample = data.loc[['ave']].filter(['num_amostra', 'nome_coletor_especime', 'genero_especie', 'localidade'], axis=1)
+    data_sample = data.loc[['aves']].filter(['num_amostra', 'nome_coletor_especime', 'genero_especie', 'localidade'], axis=1)
 
     # Delete samples with no information for 'genero_especie' and 'localidade' which are blank spaces in the spreadsheet
     data_sample = data_sample[
