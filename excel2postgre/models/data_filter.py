@@ -87,8 +87,8 @@ def filter_data_locality(data):
     """
 
     # Filter columns of interest, drop NaNs, sort values by locality, drop duplicates, reset and drop indexes
-    data_locality = data.filter(['estado', 'localidade', 'latitude', 'longitude'], axis=1).dropna(
-        subset=['localidade']).sort_values('localidade').drop_duplicates().reset_index(drop=True)
+    data_locality = data.filter(['estado', 'localidade', 'latitude', 'longitude','coordenadas_obs'], axis=1).dropna(
+        subset=['localidade']).sort_values('localidade').drop_duplicates(['localidade', 'latitude', 'longitude']).reset_index(drop=True)
 
     # Reset index to start from 1
     data_locality.index = data_locality.index + 1
@@ -98,7 +98,11 @@ def filter_data_locality(data):
 
     # Get foreign key value from 'ESTADO' table
     data_state = filter_data_state(data)
-    data_merge = pd.merge(data_locality, data_state, on='estado').drop(['estado', 'id_pais'], axis=1)
+    data_merge = pd.merge(data_locality, data_state, on='estado').drop(['estado', 'id_pais'], axis=1).sort_values(by='id_localidade')
+
+    # Convert NaN to None
+    data_merge = data_merge.astype(object).where(pd.notnull(data_merge), None)
+
     return data_merge
 
 def filter_data_order(data):
@@ -149,6 +153,7 @@ def filter_data_family(data):
     data_merge: A pandas DataFrame with processed data and
     the columns necessary to create table 'FAMILIA'
     """
+
     # Filter columns of interest, drop NaNs, sort values by family, drop duplicates, reset and drop indexes
     # argument keep='first' helps to avoid duplicates in case the same family is erroneously attributed to two orders
     data_family = data.filter(['ordem', 'familia'], axis=1).dropna(subset=['familia']).sort_values(
@@ -247,7 +252,7 @@ def filter_data_species(data):
     # Get regex patterns to clean all names that are not genus and specific epithet
     patterns = [r'sp[.]gr[.]', r'sp[.]aff[.]', r'sp[.] grupo ', r'sp\b(.*)', r'sp\d+\b(.*)',
     r'aff[.]', r'\baff\b', r'cf[.]', r'cf/', r'\bcf\b', r'gr[.]', r'\bgr\b', r'rod[.]', r'peq[.]',
-    r'x[-]', r'\W+femea.*', r'[-].*', r'ou.*',r',',r'[?]',r'\*',r'\Wjoelho.*',r'\Wpapo\b.*']
+    r'x[-]', r'\W+femea.*', r'[-].*', r'ou.*',r',', r'[?]', r'\*', r'\Wjoelho.*', r'\Wpapo\b.*']
 
     # Apply regex to clean species names by removing captured patterns
     data_species['genero_especie'] = data_species['genero_especie'].replace(patterns,'',regex=True)
@@ -270,10 +275,13 @@ def filter_data_species(data):
     data_genus = filter_data_genus(data)
 
     # Merge genus and species dataframes to get genus's foreign key for each species
-    data_merge = pd.merge(data_species, data_genus,how='left', on='genero').drop(['id_familia', 'genero'], axis=1)
+    data_merge = pd.merge(data_species, data_genus, how='left', on='genero').drop(['id_familia', 'genero'], axis=1)
 
     # Replace nans for None
     data_merge = data_merge.astype(object).where(pd.notnull(data_merge), None)
+
+    # Convert float to int in 'id_genero'
+    data_merge['id_genero'] = data_merge['id_genero'].astype(pd.Int64Dtype())
 
     return data_merge
 
@@ -305,17 +313,22 @@ def filter_data_sample(data):
     """
 
     # Filter columns of interest
-    data_sample = data.filter(['num_amostra', 'num_voucher', 'num_campo', 'genero_especie','municipio',
-                               'localidade', 'observacao', 'latitude','longitude'], axis=1)
+    data_sample = data.filter(['num_amostra', 'num_voucher', 'num_campo', 'genero_especie', 'municipio',
+                               'localidade', 'observacao', 'latitude', 'longitude'], axis=1)
 
     # Drop samples with no information for species and locality which are blank spaces in the spreadsheet
     data_sample = data_sample[(data_sample['genero_especie'].isnull() == False) | (data_sample['localidade'].isnull() == False)]
+
+    # Replace NaNs by None, this will also make latitude and longitude pd.objects
+    # This is necessary to match these fields in the data_locality df and merge
+    data_sample = data_sample.astype(object).where(pd.notnull(data_sample), None)
 
     # Get list of localities with indexes to get localities' foreign key
     data_locality = filter_data_locality(data)
 
     # Merge sample and locality dataframes, make sure row numbers are the same before and after
     # If not, most likely the locality is duplicated in the locality table, ex: same locality, two different states
+
     data_sample = pd.merge(data_sample, data_locality, how='left', on=['localidade', 'latitude', 'longitude'])
 
     ## Clean species name
@@ -330,10 +343,10 @@ def filter_data_sample(data):
     # Get regex patterns to clean all names that are not genus and specific epithet
     patterns = [r'sp[.]gr[.]', r'sp[.]aff[.]', r'sp[.] grupo ', r'sp\b(.*)', r'sp\d+\b(.*)',
     r'aff[.]', r'\baff\b', r'cf[.]', r'cf/', r'\bcf\b', r'gr[.]', r'\bgr\b', r'rod[.]', r'peq[.]',
-    r'x[-]', r'\W+femea.*', r'[-].*', r'\bou.*',r',',r'[?]',r'\*',r'\Wjoelho.*',r'\Wpapo\b.*']
+    r'x[-]', r'\W+femea.*', r'[-].*', r'\bou.*', r',', r'[?]',r'\*', r'\Wjoelho.*', r'\Wpapo\b.*']
 
     # Apply regex to clean species names by removing captured patterns
-    data_sample['genero_especie'] = data_sample['genero_especie'].replace(patterns,'',regex=True)
+    data_sample['genero_especie'] = data_sample['genero_especie'].replace(patterns, '', regex=True)
 
     # Remove samples with blank for species name
     data_sample['genero_especie'] = data_sample['genero_especie'].replace('', None, regex=True)
@@ -345,22 +358,22 @@ def filter_data_sample(data):
     # Get list of species with indexes to get localities' foreign key
     data_species = filter_data_species(data)
 
-    #Merge sample and species dataframes to get species foreign key
+    # Merge sample and species dataframes to get species foreign key
     data_merge = pd.merge(data_sample, data_species, how='left', on=['genero_especie'])
 
     # Keep only relevant columns
     data_merge = data_merge.filter(
-        ['num_amostra', 'num_campo', 'num_voucher', 'municipio', 'observacao', 'id_localidade', 'id_especie', 'genero_especie_obs'], axis=1)
+        ['num_amostra', 'num_campo', 'num_voucher', 'municipio', 'observacao', 'genero_especie_obs', 'id_localidade', 'id_especie'], axis=1)
 
     # Replace empty spaces to nan in column 'num_campo'
     data_merge['num_campo'] = data_merge['num_campo'].replace('', np.nan)
     data_merge['num_campo'].replace(r'^\s+$', np.nan, regex=True, inplace=True)
 
-    # Convert NaNs to None
-    data_merge = data_merge.astype(object).where(pd.notnull(data_merge), None)
-
     # Return id_index to integer because it was converted erroneously to float during processing
     data_merge['id_localidade'] = data_merge['id_localidade'].astype(pd.Int64Dtype())
+
+    # Convert NaNs to None
+    data_merge = data_merge.astype(object).where(pd.notnull(data_merge), None)
 
     return data_merge
 
@@ -451,8 +464,8 @@ def filter_data_ave(data):
     the columns necessary to create table 'AVE'
     """
     # Filter rows from the bird collection and filter columns of interest
-    data_ave = data.loc[['ave']].filter(['num_amostra', 'sexo', 'expedicao', 'tempo_ate_conservar', 'metodo_coleta',
-                            'meio_preserv_def', 'data_preparacao', 'musculo', 'sangue', 'figado', 'coracao',
+    data_ave = data.loc[['ave']].filter(['num_amostra', 'sexo', 'sexo_obs', 'expedicao', 'tempo_ate_conservar', 'metodo_coleta',
+                            'meio_preserv_def', 'data_preparacao', 'data_preparacao_obs', 'musculo', 'sangue', 'figado', 'coracao',
                             'genero_especie', 'localidade', 'sigla_preparador', 'numero_preparador'], axis=1)
 
     # Exclude rows that are blank for species name and locality which are blank spaces in the spreadsheet
@@ -488,7 +501,7 @@ def filter_data_ave(data):
 
     return data_ave
 
-def filter_researcher_ave(data):
+def filter_data_researcher_ave(data):
     """Make a list of collecting records, associating every bird sample
     to their voucher collector individually to create Table 'PESQUISADOR_AVE'
     and export to the Database
@@ -554,7 +567,7 @@ def filter_researcher_ave(data):
 
     return data_researcher_ave
 
-def filter_collect(data):
+def filter_data_collect(data):
     """Make a list of collecting records, associating every sample
     to their collector individually to create Table 'COLETOR'
     and export to the Database
@@ -591,7 +604,7 @@ def filter_collect(data):
         lambda x: x[0] + ' ' + x[1] if pd.isna(x[1]) == False else x[0], axis=1)
 
     # Get columns of interest
-    data_sample = data.filter(['num_amostra', 'nome_coletor', 'data_coleta', 'genero_especie', 'localidade'],
+    data_sample = data.filter(['num_amostra', 'nome_coletor', 'data_coleta', 'data_coleta_obs', 'genero_especie', 'localidade'],
                                axis=1)
     # Drop samples with no information for species and locality which are blank spaces in the database
     data_sample = data_sample[(data_sample['genero_especie'].isnull() == False) | (data_sample['localidade'].isnull() == False)]
@@ -609,19 +622,28 @@ def filter_collect(data):
     # Merge sample and research dataframes to get researcher foreign key, select columns of interest
     # sort values by 'num_amostra', reset index
     data_collect = data_researcher.merge(data_sample, right_on='nome_coletor', left_on='nome_completo_pesquisador')[
-        ['data_coleta', 'num_amostra', 'id_pesquisador']].sort_values(by='num_amostra').reset_index(drop=True)
+        ['data_coleta', 'data_coleta_obs', 'num_amostra', 'id_pesquisador']].sort_values(by='num_amostra').reset_index(drop=True)
 
     # Reset index to start in 1
     data_collect.index = data_collect.index + 1
 
     # Rename columns
-    data_collector = data_collect.reset_index().rename(
+    data_collect = data_collect.reset_index().rename(
         columns={'index': 'id_coleta', 'num_amostra': 'num_amostra', 'data_coleta': 'data_coleta'})
 
     # Make sure all dates are in datetime format, if not convert to NaN
     data_collect['data_coleta'] = pd.to_datetime(data_collect['data_coleta'], format='%Y-%m-%d', errors='coerce')
 
     # Convert NaNs to None
-    data_collect = data_collector.astype(object).where(pd.notnull(data_collect), None)
+    data_collect = data_collect.astype(object).where(pd.notnull(data_collect), None)
 
     return data_collect
+
+####### AFAZERES
+
+## Quinta feira
+
+# Modificar SQL:
+# da base de dados de peixe para incluir as demais colunas que ficaram faltando
+# Verificar todos os campos que estão faltando em comum por exemplo pais e municipio
+# revisar modelo e SQL pra ver se está contemplando as mudanças feita aqui

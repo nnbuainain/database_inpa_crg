@@ -1,6 +1,7 @@
 import time, constant
 import utils.util as util
 import utils.db as db
+import spreadsheet
 from models.data_filter import *
 
 def migrate_data(option: int) -> None:
@@ -58,7 +59,6 @@ def menu() -> bool:
           '10 - Migrate table AVE\n'
           '11 - Migrate table PESQUISADOR_AVE\n'
           '12 - Migrate table COLETOR\n'
-          '13 - Migrate table HERPETO\n'
           '--------------------------')
 
     while True:
@@ -68,7 +68,7 @@ def menu() -> bool:
             print('Invalid option!\n')
             util.delete_last_line(num_rows=2, wait=2)
         else:
-            if (option < 0) or (option > 13):
+            if (option < 0) or (option > 12):
                 print('Menu doe not have this option! Try again...')
                 util.delete_last_line(num_rows=2, wait=2)
             else:
@@ -89,7 +89,7 @@ def main():
 
     global conn, sheet
     conn = db.create_connection()
-    sheet = util.read_file()
+    sheet = spreadsheet.load_n_clean_dataframes()
 
     while keep:
         util.cleanup()

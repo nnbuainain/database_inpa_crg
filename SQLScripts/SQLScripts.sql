@@ -63,6 +63,7 @@ CREATE TABLE LOCALIDADE (
     nome_localidade VARCHAR(255),
     latitude DECIMAL(5,3),
     longitude DECIMAL(5,3),
+    coordenadas_obs VARCHAR(100),
     FK_id_estado INT
 );
  
@@ -84,19 +85,21 @@ ALTER TABLE LOCALIDADE_PEIXE ADD CONSTRAINT FK_LOCALIDADE_PEIXE_2
 
 CREATE TABLE AMOSTRA (
     num_amostra VARCHAR(20) PRIMARY KEY,
-    num_campo VARCHAR(14),
-    num_voucher VARCHAR(14),
-	obs VARCHAR(255),
+    num_campo VARCHAR(50),
+    num_voucher VARCHAR(50),
+	municipio VARCHAR(255),
+	obs VARCHAR(300),
     FK_id_localidade INT,
-    FK_id_especie INT
+    FK_id_especie INT,
+    identificacao_especie_obs VARCHAR(100)
 );
  
 CREATE TABLE PESQUISADOR (
     id_pesq INT PRIMARY KEY,
-    nome VARCHAR(50),
-    sobrenome VARCHAR(50),
-    email VARCHAR(255),
-    instituicao VARCHAR(255)
+    nome_pesquisador VARCHAR(50),
+    sobrenome_pesquisador VARCHAR(50),
+    email_pesquisador VARCHAR(255),
+    instituicao_pesquisador VARCHAR(255)
 ); 
  
 ALTER TABLE AMOSTRA ADD CONSTRAINT FK_AMOSTRA_2
@@ -107,17 +110,6 @@ ALTER TABLE AMOSTRA ADD CONSTRAINT FK_AMOSTRA_3
     FOREIGN KEY (FK_id_especie)
     REFERENCES ESPECIE (id_especie);
 	
-CREATE TABLE HERPETO (
-    FK_num_amostra VARCHAR(20) PRIMARY KEY,
-    data_coleta DATE,
-    nome_municipio VARCHAR(100)
-);
- 
-ALTER TABLE HERPETO ADD CONSTRAINT FK_HERPETO_2
-    FOREIGN KEY (FK_num_amostra)
-    REFERENCES AMOSTRA (num_amostra)
-    ON DELETE CASCADE;
-
 CREATE TABLE PEIXE (
     FK_num_amostra VARCHAR(20) PRIMARY KEY,
     nome_comum VARCHAR(50),
@@ -135,12 +127,14 @@ ALTER TABLE PEIXE ADD CONSTRAINT FK_PEIXE_3
 	
 CREATE TABLE AVE (
     FK_num_amostra VARCHAR(20) PRIMARY KEY,
-    sexo CHAR(5),
+    sexo CHAR(1),
+	sexo_obs VARCHAR(100),
     expedicao VARCHAR(100),
     tempo_ate_conservar VARCHAR(60),
     metodo_coleta VARCHAR(50),
     meio_pres_def VARCHAR(60),
     data_preparacao DATE,
+	data_preparacao_obs VARCHAR(100),
 	musculo BOOLEAN,
 	sangue BOOLEAN,
     figado BOOLEAN,
@@ -190,6 +184,7 @@ ALTER TABLE SOLICITA ADD CONSTRAINT FK_SOLICITA_3
 CREATE TABLE COLETA (
     id_coleta INT PRIMARY KEY,
     data_coleta DATE,
+    data_coleta_obs VARCHAR(100),
     FK_num_amostra VARCHAR(20),
     FK_id_pesq INT
 );
