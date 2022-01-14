@@ -47,7 +47,7 @@ We are currently at the third stage, developing the ETL pipeline to migrate the 
 
 ## Database Model
 
-* This is how our new database currently look like:
+* This is how our new database currently looks like:
 
 <p align="center"> <img src=/models/logic_model.png alt="model" class="center"></p>
 
