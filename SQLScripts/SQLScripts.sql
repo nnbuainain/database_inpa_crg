@@ -113,8 +113,11 @@ ALTER TABLE AMOSTRA ADD CONSTRAINT FK_AMOSTRA_3
 	
 CREATE TABLE PEIXE (
     FK_num_amostra VARCHAR(20) PRIMARY KEY,
-    nome_comum VARCHAR(50),
+    nome_comum VARCHAR(100),
     caixa INT,
+    responsavel_projeto VARCHAR(255),
+    comprimento_padrao DECIMAL(5,2),
+    status VARCHAR(100),
     PK_id_localidade_peixe INT
 );
  
