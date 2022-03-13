@@ -313,7 +313,7 @@ def filter_data_sample(data):
     """
 
     # Filter columns of interest
-    data_sample = data.filter(['num_amostra', 'num_voucher', 'num_campo', 'genero_especie', 'municipio',
+    data_sample = data.filter(['num_amostra', 'num_voucher', 'num_campo', 'genero_especie', 'genero', 'familia', 'ordem', 'municipio','pais','estado',
                                'localidade', 'observacao', 'latitude', 'longitude'], axis=1)
 
     # Drop samples with no information for species and locality which are blank spaces in the spreadsheet
@@ -325,8 +325,22 @@ def filter_data_sample(data):
     # This is necessary to match these fields in the data_locality df and merge
     data_sample = data_sample.astype(object).where(pd.notnull(data_sample), None)
 
+    # Get list of countries with indexes to get countries' foreign key
+    data_country = filter_data_country(data)
+
+    # Merge sample and country dataframes, make sure row numbers are the same before and after
+    data_sample = pd.merge(data_sample, data_country, how='left', on=['pais'])
+
+    # Get list of states with indexes to get states' foreign key
+    data_state = filter_data_state(data)
+    data_state = data_state.drop(['id_pais'], axis=1)
+
+    # Merge sample's and states' dataframes, make sure row numbers are the same before and after
+    data_sample = pd.merge(data_sample, data_state, how='left', on=['estado'])
+
     # Get list of localities with indexes to get localities' foreign key
     data_locality = filter_data_locality(data)
+    data_locality = data_locality.drop(['id_estado'],axis=1)
 
     # Merge sample and locality dataframes, make sure row numbers are the same before and after
     # If not, most likely the locality is duplicated in the locality table, ex: same locality, two different states
@@ -361,18 +375,44 @@ def filter_data_sample(data):
     data_species = filter_data_species(data)
 
     # Merge sample and species dataframes to get species foreign key
-    data_merge = pd.merge(data_sample, data_species, how='left', on=['genero_especie'])
+    data_sample = pd.merge(data_sample, data_species, how='left', on=['genero_especie'])
+    data_sample = data_sample.drop(['id_genero'], axis=1)
+
+    # Get list of genus with indexes to get genus' foreign key
+    data_genus = filter_data_genus(data)
+    data_genus = data_genus.drop(['id_familia'], axis=1)
+
+    # Merge sample's and genus' dataframes, make sure row numbers are the same before and after
+    data_sample = pd.merge(data_sample, data_genus, how='left', on=['genero'])
+
+    # Get list of families with indexes to get families' foreign key
+    data_family = filter_data_family(data)
+    data_family = data_family.drop(['id_ordem'], axis=1)
+
+    # Merge sample's and families' dataframes, make sure row numbers are the same before and after
+    data_sample = pd.merge(data_sample, data_family, how='left', on=['familia'])
+
+    # Get list of orders with indexes to get orders' foreign key
+    data_order = filter_data_order(data)
+
+    # Merge sample's and orders' dataframes, make sure row numbers are the same before and after
+    data_merge = pd.merge(data_sample, data_order, how='left', on=['ordem'])
+
+    #
+    # ## TEMPORARIO!!!!
+    # data_merge[['id_genero', 'id_familia', 'id_ordem']] = None
 
     # Keep only relevant columns
     data_merge = data_merge.filter(
-        ['num_amostra', 'num_campo', 'num_voucher', 'municipio', 'observacao', 'genero_especie_obs', 'colecao', 'id_localidade', 'id_especie'], axis=1)
+        ['num_amostra', 'num_campo', 'num_voucher', 'municipio', 'observacao', 'genero_especie_obs', 'colecao', 'id_ordem',
+         'id_familia', 'id_genero', 'id_especie', 'id_pais', 'id_estado', 'id_localidade'], axis=1)
 
     # Replace empty spaces to nan in column 'num_campo'
     data_merge['num_campo'] = data_merge['num_campo'].replace('', np.nan)
     data_merge['num_campo'].replace(r'^\s+$', np.nan, regex=True, inplace=True)
 
     # Return id_index to integer because it was converted erroneously to float during processing
-    data_merge['id_localidade'] = data_merge['id_localidade'].astype(pd.Int64Dtype())
+    data_merge[['id_localidade', 'id_pais', 'id_estado', 'id_genero', 'id_familia', 'id_ordem']] = data_merge[['id_localidade', 'id_pais', 'id_estado', 'id_genero', 'id_familia', 'id_ordem']].astype(pd.Int64Dtype())
 
     # Convert NaNs to None
     data_merge = data_merge.astype(object).where(pd.notnull(data_merge), None)
@@ -405,6 +445,7 @@ def filter_data_researcher(data):
     collector_voucher_aves = data['nome_coletor_especime'].str.split('/|,|;|&| e ', expand=True)
 
     # add researcher from the loan spreadsheet below when it is ready, this will need to be passed as new argument
+
 
     # list all dataframes with split collectors you want to combine
     frames = [collector, collector_voucher_aves]

@@ -69,7 +69,7 @@ def menu() -> bool:
             util.delete_last_line(num_rows=2, wait=2)
         else:
             if (option < 0) or (option > 12):
-                print('Menu doe not have this option! Try again...')
+                print('Menu does not have this option! Try again...')
                 util.delete_last_line(num_rows=2, wait=2)
             else:
                 util.cleanup()
