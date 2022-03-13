@@ -91,8 +91,13 @@ CREATE TABLE AMOSTRA (
 	obs VARCHAR(300),
 	identificacao_especie_obs VARCHAR(100),
 	colecao VARCHAR(50) CHECK (colecao in ('aves','herpeto','peixes')),
-    FK_id_localidade INT,
-    FK_id_especie INT
+    FK_id_ordem INT,
+    FK_id_familia INT,
+    FK_id_genero INT,
+    FK_id_especie INT,
+    FK_id_pais INT,
+    FK_id_estado INT,
+    FK_id_localidade INT
 );
  
 CREATE TABLE PESQUISADOR (
@@ -103,6 +108,7 @@ CREATE TABLE PESQUISADOR (
     instituicao_pesquisador VARCHAR(255)
 ); 
  
+
 ALTER TABLE AMOSTRA ADD CONSTRAINT FK_AMOSTRA_2
     FOREIGN KEY (FK_id_localidade)
     REFERENCES LOCALIDADE (id_localidade);
@@ -110,6 +116,26 @@ ALTER TABLE AMOSTRA ADD CONSTRAINT FK_AMOSTRA_2
 ALTER TABLE AMOSTRA ADD CONSTRAINT FK_AMOSTRA_3
     FOREIGN KEY (FK_id_especie)
     REFERENCES ESPECIE (id_especie);
+ 
+ALTER TABLE AMOSTRA ADD CONSTRAINT FK_AMOSTRA_4
+    FOREIGN KEY (FK_id_genero)
+    REFERENCES GENERO (id_genero);
+ 
+ALTER TABLE AMOSTRA ADD CONSTRAINT FK_AMOSTRA_5
+    FOREIGN KEY (FK_id_familia)
+    REFERENCES FAMILIA (id_familia);
+ 
+ALTER TABLE AMOSTRA ADD CONSTRAINT FK_AMOSTRA_6
+    FOREIGN KEY (FK_id_ordem)
+    REFERENCES ORDEM (id_ordem);
+ 
+ALTER TABLE AMOSTRA ADD CONSTRAINT FK_AMOSTRA_7
+    FOREIGN KEY (FK_id_estado)
+    REFERENCES ESTADO (id_estado);
+ 
+ALTER TABLE AMOSTRA ADD CONSTRAINT FK_AMOSTRA_8
+    FOREIGN KEY (FK_id_pais)
+    REFERENCES PAIS (id_pais);
 	
 CREATE TABLE PEIXE (
     FK_num_amostra VARCHAR(20) PRIMARY KEY,
